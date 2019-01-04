@@ -12,7 +12,6 @@ ssl._create_default_https_context = ssl._create_unverified_context
 req = requests.Session()
 
 class leftQuery(object):
-    '''余票查询入口'''
     def __init__(self):
         self.station_url = 'https://kyfw.12306.cn/otn/resources/js/framework/station_name.js'
         self.headers = {
@@ -25,7 +24,6 @@ class leftQuery(object):
         }
 
     def station_name(self, station):
-        '''读取车站列表'''
         html = requests.get(self.station_url, verify=False).text
         result = html.split('@')[1:]
         dict = {}
@@ -40,7 +38,6 @@ class leftQuery(object):
             sys.exit(0)
 
     def query(self, from_station, to_station, date):
-        '''余票查询方法'''
         fromstation = self.station_name(from_station)
         tostation = self.station_name(to_station)
         url = 'https://kyfw.12306.cn/otn/leftTicket/queryZ?leftTicketDTO.train_date={}&leftTicketDTO.from_station={}&leftTicketDTO.to_station={}&purpose_codes=ADULT'.format(
@@ -53,14 +50,40 @@ class leftQuery(object):
                 exit()
             else:
                 print(date + ' 【' + from_station + '->' + to_station + '】 车票实时信息查询成功！\n')
+                if len(sys.argv) == 5:
+                    for i in result:
+                        info = i.split('|')
+                        if info[3] == sys.argv[4].strip():
+                            if info[0] != '' and info[0] != 'null':
+                                print(info[3] + '车次还有余票:')
+                                print('出发:' + info[8] + ' 到达:' + info[9] + ' 历时:' + info[10] + ' ', end='')
+                                seat = {21: '高级软卧', 23: '软卧', 26: '无座', 28: '硬卧', 29: '硬座', 30: '二等座', 31: '一等座', 32: '商务座', 33: '动卧'}
+                                from_station_no = info[16]
+                                to_station_no = info[17]
+                                for j in seat.keys():
+                                    if info[j] != '无' and info[j] != '':
+                                        if info[j] == '有':
+                                            print(seat[j] + ':有票 ', end='')
+                                        else:
+                                            print(seat[j] + ':还剩' + info[j] + '张票 ', end='')
+                                print('\n')
+                            elif info[1] == '预订':
+                                print(info[3] + '车次暂时没有余票\n')
+                            elif info[1] == '列车停运':
+                                print(info[3] + '车次列车停运\n')
+                            elif info[1] == '23:00-06:00系统维护时间':
+                                print(info[3] + '23:00-06:00系统维护时间\n')
+                            else:
+                                print(info[3] + '车次列车运行图调整,暂停发售\n')
+                    return result
+                    sys.exit(0)
                 num = 1
                 for i in result:
                     info = i.split('|')
                     if info[0] != '' and info[0] != 'null':
                         print(str(num) + '.' + info[3] + '车次还有余票:')
-                        print('出发时间:' + info[8] + ' 到达时间:' + info[9] + ' 历时多久:' + info[10] + ' ', end='')
-                        seat = {21: '高级软卧', 23: '软卧', 26: '无座', 28: '硬卧', 29: '硬座', 30: '二等座', 31: '一等座', 32: '商务座',
-                                33: '动卧'}
+                        print('出发:' + info[8] + ' 到达:' + info[9] + ' 历时:' + info[10] + ' ', end='')
+                        seat = {21: '高级软卧', 23: '软卧', 26: '无座', 28: '硬卧', 29: '硬座', 30: '二等座', 31: '一等座', 32: '商务座', 33: '动卧'}
                         from_station_no = info[16]
                         to_station_no = info[17]
                         for j in seat.keys():
@@ -68,7 +91,7 @@ class leftQuery(object):
                                 if info[j] == '有':
                                     print(seat[j] + ':有票 ', end='')
                                 else:
-                                    print(seat[j] + ':有' + info[j] + '张票 ', end='')
+                                    print(seat[j] + ':还剩' + info[j] + '张票 ', end='')
                         print('\n')
                     elif info[1] == '预订':
                         print(str(num) + '.' + info[3] + '车次暂时没有余票\n')
@@ -85,7 +108,7 @@ class leftQuery(object):
             exit()
 
 def scan():
-    if (len(sys.argv) == 4):
+    if (len(sys.argv) >= 4):
     	from_station = sys.argv[1].strip()
     	to_station = sys.argv[2].strip()
     	date = sys.argv[3].strip()
@@ -97,6 +120,6 @@ def scan():
     	result = leftQuery().query(from_station, to_station, date)
 
 if __name__ == '__main__':
-    print('*' * 20 + '【小丁工作室】春运抢票监控系统 V2019.1' + '*' * 20 + '\n')
+    print('*' * 16 + '【小丁工作室】春运抢票监控系统 V2019.1' + '*' * 16 + '\n')
     print('服务器时间：' + time.strftime('%Y/%m/%d %H:%M:%S',time.localtime(time.time())) + '\n')
     scan()
